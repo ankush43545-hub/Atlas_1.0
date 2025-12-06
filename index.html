@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Atlas Chat</title>
+
+<style>
+    body {
+        margin: 0;
+        background: #0f0f10;
+        font-family: Arial, sans-serif;
+        color: #fff;
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+    }
+
+    /* Header */
+    header {
+        padding: 15px 20px;
+        background: #111113;
+        font-size: 1.3rem;
+        font-weight: bold;
+        border-bottom: 1px solid #1e1e1f;
+        text-align: center;
+        letter-spacing: 1px;
+    }
+
+    /* Chat container */
+    #chat {
+        flex: 1;
+        overflow-y: auto;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+        scroll-behavior: smooth;
+    }
+
+    /* Message bubbles */
+    .msg {
+        max-width: 75%;
+        padding: 12px 16px;
+        border-radius: 14px;
+        font-size: 0.95rem;
+        animation: fadeIn 0.25s ease;
+    }
+
+    .user {
+        background: #1c1c20;
+        align-self: flex-end;
+        border: 1px solid #232329;
+    }
+
+    .bot {
+        background: #151518;
+        align-self: flex-start;
+        border: 1px solid #202025;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(6px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Input area */
+    footer {
+        padding: 12px;
+        display: flex;
+        gap: 10px;
+        border-top: 1px solid #1d1d20;
+        background: #111113;
+    }
+
+    #input {
+        flex: 1;
+        padding: 12px 15px;
+        border-radius: 12px;
+        border: none;
+        outline: none;
+        background: #1a1a1d;
+        color: #fff;
+        font-size: 0.95rem;
+        transition: 0.2s;
+    }
+
+    #input:focus {
+        background: #1f1f22;
+    }
+
+    /* Neon send button */
+    #sendBtn {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        border: none;
+        cursor: pointer;
+        background: #00aaff;
+        box-shadow: 0 0 10px #00aaffaa;
+        color: #fff;
+        font-size: 1.3rem;
+        transition: 0.15s;
+    }
+
+    #sendBtn:active {
+        transform: scale(0.92);
+        box-shadow: 0 0 4px #00aaff;
+    }
+
+    /* Typing dots */
+    .typing {
+        display: flex;
+        gap: 6px;
+        padding: 10px 14px;
+        background: #151518;
+        width: fit-content;
+        border-radius: 12px;
+        border: 1px solid #202025;
+        margin-top: -5px;
+        animation: fadeIn 0.25s ease;
+    }
+
+    .typing span {
+        width: 8px;
+        height: 8px;
+        background: #aaa;
+        border-radius: 50%;
+        animation: blink 1.4s infinite ease-in-out;
+    }
+
+    .typing span:nth-child(2) { animation-delay: 0.2s; }
+    .typing span:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes blink {
+        0%, 80%, 100% { opacity: 0.2; }
+        40% { opacity: 1; }
+    }
+
+</style>
+</head>
+
+<body>
+
+<header>Atlas</header>
+
+<div id="chat"></div>
+
+<footer>
+    <input id="input" placeholder="Message Atlas..." />
+    <button id="sendBtn">➤</button>
+</footer>
+
+<script>
+    const chat = document.getElementById("chat");
+    const input = document.getElementById("input");
+    const sendBtn = document.getElementById("sendBtn");
+
+    function addMessage(text, sender) {
+        const msg = document.createElement("div");
+        msg.className = "msg " + sender;
+        msg.innerText = text;
+        chat.appendChild(msg);
+        chat.scrollTop = chat.scrollHeight;
+    }
+
+    function showTyping() {
+        const wrap = document.createElement("div");
+        wrap.className = "typing bot";
+        wrap.innerHTML = "<span></span><span></span><span></span>";
+        wrap.id = "typing";
+        chat.appendChild(wrap);
+        chat.scrollTop = chat.scrollHeight;
+    }
+
+    function removeTyping() {
+        const t = document.getElementById("typing");
+        if (t) t.remove();
+    }
+
+    async function sendMessage() {
+        let text = input.value.trim();
+        if (!text) return;
+        
+        addMessage(text, "user");
+        input.value = "";
+
+        showTyping();
+
+        // replace API call with your backend URL
+        try {
+            const res = await fetch("https://atlas-backend-roi5.onrender.com", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ message: text })
+            });
+
+            const data = await res.json();
+
+            removeTyping();
+            addMessage(data.reply || "Atlas did not respond.", "bot");
+
+        } catch (err) {
+            removeTyping();
+            addMessage("Network error.", "bot");
+        }
+    }
+
+    sendBtn.addEventListener("click", sendMessage);
+    input.addEventListener("keydown", e => {
+        if (e.key === "Enter") sendMessage();
+    });
+</script>
+
+</body>
+</html>
